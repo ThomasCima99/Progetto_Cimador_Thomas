@@ -1,0 +1,392 @@
+---
+title: "Analisi dell'industria dei videogiochi"
+author: "Cimador Thomas"
+date: "11/01/2022"
+output:    
+  ioslides_presentation:
+    css: ./style.css
+    incremental: true
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
+```
+
+```{r echo=FALSE}
+library(readr)
+library(magrittr)  
+library(tidyverse)
+library(dplyr)
+library(forcats)   
+library(gridExtra) 
+
+VideoGames = read_csv("VideoGames.csv")
+
+VideoGames$User_Score = as.numeric(VideoGames$User_Score)
+VideoGames$Year = as.character(VideoGames$Year)
+VideoGames$NA_Sales[is.na(VideoGames$NA_Sales)] = 0
+VideoGames$EU_Sales[is.na(VideoGames$EU_Sales)] = 0
+VideoGames$JP_Sales[is.na(VideoGames$JP_Sales)] = 0
+VideoGames$Global_Sales[is.na(VideoGames$Global_Sales)] = 0
+VideoGames$Publisher[is.na(VideoGames$Publisher)] = "Unknown"
+```
+## L'obiettivo di questa analisi
+
+L'obiettivo di questa analisi è scoprire lo sviluppo dell'industria dei videogiochi dal 1995 al 2020. Argomenti dell'analisi saranno:
+
+* La popolarità dei generi dei videogiochi e delle loro piattaforme di gioco
+
+* I migliori editori e le loro vendite (i dati relativi alle vendite sono disponibili fino ai giochi rilasciati nel 2017)
+
+* Quanti videogiochi sono stati rilasciati negli anni
+
+* I generi di videogiochi più venduti in USA, Europa e Giappone
+
+* Confronto dei punteggi della critica con i punteggi degli utenti
+
+
+
+
+## Generi più popolari
+
+Un genere di videogiochi è una categoria specifica di videogiochi legati da caratteristiche di gioco simili. I generi di videogiochi non sono generalmente definiti dall'ambientazione, dalla storia del gioco o dalla piattaforma usata, ma dal modo in cui il giocatore interagisce con il gioco.
+
+```{r include=FALSE}
+Top_Generi = VideoGames %>%
+  mutate(Genre = Genre %>% fct_infreq() %>% fct_rev()) %>%
+  group_by(Genre) %>%
+  summarise(count_Genres = n()) %>%
+  arrange(desc(count_Genres))
+```
+```{r echo=FALSE}
+Top_Generi %>%
+  filter(count_Genres >= 50) %>%
+  filter(Genre != "Miscellaneous") %>%
+  ggplot(aes(x = Genre, y = count_Genres, fill = Genre)) +
+  geom_col() +
+  labs(title = "Generi più popolari", x = "Generi", y = "Numero di videogiochi") +
+  theme(legend.position = "none") +
+  coord_flip()
+```
+
+I videogiochi col genere Action sono tra i più diffusi di sempre.
+
+I videogiochi con questo genere superano di quattro volte il numero di videogiochi col  genere che si piazza al secondo posto, ovvero Role-Playing.
+
+## Una descrizione dei generi più popolari:
+
+* Action: videogiochi basati sulla prontezza di riflessi e sull'agilità con i comandi. Sono in genere ricchi di combattimenti sia con armi che senza.
+
+* Role-Playing: il giocatore assume il ruolo di un personaggio in uno spazio immaginato, dove avvengono fatti ed eventi fittizi.
+
+* Strategy: videogiochi in cui le decisioni di un giocatore hanno un grande impatto sul risultato. Quasi tutti i giochi di strategia richiedono un pensiero in stile albero decisionale interno e in genere una consapevolezza situazionale molto elevata.
+
+* Sports: videogiochi che simulano discipline sia di squadra che individuali in cui il giocatore prende attivamente il controllo degli atleti/piloti durante le competizioni.
+
+* Adventure: è un genere di videogioco caratterizzato dall'esplorazione, risoluzione di enigmi, interazione con personaggi di gioco ed è incentrato sulla narrazione.
+
+
+
+
+
+
+## Piattaforme più popolari
+
+Per piattaforma si intende un apparecchio elettronico utilizzato per videogiocare. Per la visualizzazione delle immagini possono connettersi a un normale televisore oppure, nel caso delle console portatili, essere dotati di uno schermo integrato.
+
+```{r include=FALSE}
+Top_Piattaforme = VideoGames %>%
+  mutate(Platform = Platform %>% fct_infreq() %>% fct_rev()) %>%
+  group_by(Platform) %>%
+  summarise(count_Platforms = n()) %>%
+  arrange(desc(count_Platforms))
+```
+```{r echo=FALSE}
+Top_Piattaforme %>%
+  filter(count_Platforms >= 100) %>%
+  ggplot(aes(x = Platform, y = count_Platforms, fill = Platform)) +
+  geom_col() +
+  labs(title = "Piattaforme più popolari", x = "Piattaforme", y = "Numero giochi rilasciati") +
+  theme(legend.position = "none") + 
+  coord_flip()
+
+```
+
+Il PC è la piattaforma su cui maggiormente sono stati rilasciati videogiochi, seguita da PlayStation 4 e Xbox360.
+
+
+
+
+
+## Gli editori e le loro vendite
+
+Un editore di videogiochi è un'azienda che pubblica videogiochi: questi possono essere sviluppati internamente all'azienda stessa.
+
+I top 10 editori in base alle vendite totali (in milioni di unità) dei loro videogiochi.
+
+```{r, echo=FALSE}
+Vendite_Per_Editore = VideoGames %>%
+  mutate(Publisher = Publisher %>% fct_infreq() %>% fct_rev()) %>%
+  group_by(Publisher) %>%
+  summarise(TOT_Sales = sum(Global_Sales)) %>%
+  arrange(desc(TOT_Sales))
+
+
+Top10_Editori = Vendite_Per_Editore[1:10,]
+
+
+Top10_Editori %>%
+  ggplot(aes(x = reorder(Publisher,TOT_Sales),y = TOT_Sales, fill = TOT_Sales)) +
+  geom_col() +
+  labs(title = "Top 10 editori", x = "Editori", y = "Videogiochi venduti in milioni di unità") +
+  theme(legend.position = "none") +
+  coord_flip()
+
+```
+
+In cima alla classifica troviamo Nintendo con quasi 1 miliardo di unità vendute, al secondo posto Electronic Arts con 500 milioni di unità vendute ed infine Sony Computer Entertainment con 400 milioni di unità vendute.
+
+
+
+## Numero di videogiochi rilasciati negli anni
+
+```{r echo=FALSE}
+VideoGames %>%
+  ggplot(aes(Year)) +
+  geom_bar( aes(fill = Year)) +
+  theme(legend.position = "none") +
+  labs(title = "Numero di videogiochi rilasciati negli anni", x = "Anno", y = "Numero giochi rilasciati") +
+  geom_text(stat='count', aes(label=..count..), hjust = -0.2, size = 3)+
+  coord_flip()
+```
+
+Il grafico si presenta altalenante, il numero di videogiochi rilasciati dagli inizi del 2000 aumentano fino al 2009. Da questo anno fino al 2015 il numero di videogiochi rilasciati sono diminuiti a livello primi anni 2000, per poi aumentare a livello fine 2000 e di nuovo diminuire.
+
+
+Ordinando il grafico si ottiene:
+
+```{r echo=FALSE}
+VideoGames %>%
+  mutate(Year = Year %>% fct_infreq() %>% fct_rev()) %>%
+  ggplot(aes(Year)) +
+  geom_bar( aes(fill = Year)) +
+  theme(legend.position = "none") +
+  labs(title = "Numero di videogiochi rilasciati negli anni", x = "Anno", y = "Numero giochi rilasciati") +
+  geom_text(stat='count', aes(label=..count..), hjust = -0.2, size = 3)+
+  coord_flip()
+```
+
+Il 2018 è stato l'anno in cui sono stati rilasciati più videogiochi, seguito dal 2009 e poi dal 2017.
+
+
+## Vendite per genere
+Negli USA, Europa e Giappone
+
+```{r include=FALSE}
+NAsales_Genre = VideoGames %>%
+  group_by(Genre)  %>%
+  filter(Genre != "Miscellaneous") %>%
+  summarise(NAsales = sum(NA_Sales))  %>%
+  arrange(desc(NAsales))
+```
+```{r include=FALSE}
+USA = NAsales_Genre %>%
+  filter(NAsales >= 30) %>%
+  mutate(Genre = fct_reorder(Genre, NAsales)) %>%
+  ggplot( aes(x=Genre, y=NAsales, fill = Genre)) +
+  geom_col() +
+  labs(title="USA", x= "Genere",
+       y= "Vendite totali del genere in milioni di unità") +
+  theme(legend.position = "none") +
+  coord_flip()
+#USA
+```
+
+```{r include=FALSE}
+EUsales_Genre = VideoGames %>%
+  group_by(Genre) %>%
+  filter(Genre != "Miscellaneous") %>%
+  summarise(EUsales = sum(EU_Sales))  %>%
+  arrange(desc(EUsales)) 
+```
+```{r include=FALSE}
+EU = EUsales_Genre %>%
+  filter(EUsales >= 20) %>%
+  mutate(Genre = fct_reorder(Genre, EUsales)) %>%
+  ggplot( aes(x=Genre, y=EUsales, fill = Genre)) +
+  geom_col() +
+  labs(title="Europa", x= "Genere",
+       y= "Vendite totali del genere in milioni di unità") +
+  theme(legend.position = "none") +
+  coord_flip()
+#EU
+```
+
+```{r include=FALSE}
+JPsales_Genre = VideoGames %>%
+  group_by(Genre)  %>%
+  filter(Genre != "Miscellaneous") %>%
+  summarise(JPsales = sum(JP_Sales))  %>%
+  arrange(desc(JPsales))
+```
+```{r include=FALSE}
+JP = JPsales_Genre %>%
+  filter(JPsales >= 10) %>%
+  mutate(Genre = fct_reorder(Genre, JPsales)) %>%
+  ggplot( aes(x=Genre, y=JPsales, fill = Genre)) +
+  geom_col() +
+  labs(title="Giappone", x= "Genere",
+       y= "Vendite totali del genere in milioni di unità") +
+  theme(legend.position = "none") +
+  coord_flip()
+#JP
+```
+
+
+
+```{r echo=FALSE}
+grid.arrange(USA, EU, JP, nrow=3, ncol=1)
+```
+
+I grafici delle vendite per genere negli USA e in Europa sono uguali. In entrambe le Regioni il genere Action si colloca al primo posto per vendite con un notevole distacco dal secondo, ovvero Sports.
+
+Anche in Giappone i videogiochi Action sono al primo posto tra i più venduti, ma a differenza degli USA ed Europa al secondo posto si colloca Role-Playing, con un distacco meno marcato dalla prima posizione rispetto a quello di USA ed Europa. Al terzo posto c'è Sports, il quale in USA ed Europa occupava in entrambi il secondo posto.
+Il genere Strategy occupa l'ultima posizione per vendite in tutti e tre i Paesi.
+
+
+
+## Distribuzione dei punti assegnati dalla critica e dagli utenti tra i generi
+
+Per i punteggi assegnati dalla critica sarà utilizzato il punteggio Metacritic.
+
+Metacritic è un sito web statunitense che si occupa di raccogliere recensioni dedicate ad album musicali, film o videogiochi. Per ogni prodotto, Metacritic fornisce una valutazione, ottenuta convertendo ogni recensione dai critici più rispettati in un punteggio numerico da 0 a 100, e calcolandone quindi la media.
+
+Inoltre, sul sito web di Metacritic gli utenti possono dare la propria valutazione di un album musicale, film o videogioco attraverso un punteggio che va da 0 a 10. Il punteggio degli utenti è dunque la media di tutti i punteggi degli utenti su quel specifico prodotto.
+
+Utilizziamo il punteggio Metacritic e quello assegnato dagli utenti ai titoli, per scoprire quale genere di videogiochi ha i voti più alti e bassi, secondo la critica e gli utenti.
+
+```{r include=FALSE}
+Punti_per_Genere = VideoGames %>%
+  group_by(Genre) %>%
+  summarise(sum_games = n()) %>%
+  filter(sum_games >= 300) %>%
+  arrange(desc(sum_games)) %>%
+  pull(Genre)
+```
+```{r include=FALSE}
+Punti_Per_Genere_Metacritic = VideoGames %>%
+  filter(Genre %in% Punti_per_Genere) %>%
+  filter(Genre != "Miscellaneous") %>%
+  ggplot(aes(x = Genre, y = Score, fill = Genre, color = Genre)) +
+  geom_boxplot(alpha = 0.4) +
+  scale_y_continuous(limits=c(0,100), breaks = seq(0,100,10)) +
+  labs(title = "Distribuzione del punteggio Metacritic", x = "Top Generi", y =       "punteggio Metacritic") +
+  theme(legend.position = "none") +
+  coord_flip()
+#Punti_Per_Genere_Metacritic
+```
+
+
+```{r include=FALSE}
+Punti_Per_Genere_Users = VideoGames %>%
+  filter(Genre %in% Punti_per_Genere) %>%
+  filter(Genre != "Miscellaneous") %>%
+  ggplot(aes(x = Genre, y = User_Score, fill = Genre, color = Genre)) +
+  geom_boxplot(alpha = 0.4) +
+  scale_y_continuous(limits=c(0,10), breaks = seq(0,10,1)) +
+  labs(title = "Distribuzione del punteggio degli utenti", x = "Top Generi", y = "punteggio degli utenti") +
+  theme(legend.position = "none") +
+  coord_flip()
+#Punti_Per_Genere_Users
+```
+```{r echo=FALSE}
+grid.arrange(Punti_Per_Genere_Metacritic, Punti_Per_Genere_Users, nrow=2, ncol=1)
+```
+
+I videogiochi Role-Playing hanno ottenuto un punteggio da parte della critica più alto, mentre quello più basso i videogiochi Simulation.
+
+Anche gli utenti hanno dato voti più alti ai videogiochi con genere Role-Playing, mentre i videogiochi con genere Adventure hanno ricevuto voti più bassi.
+
+
+
+
+
+## Distribuzione dei punti assegnati dalla critica e dagli utenti tra gli editori
+
+Come fatto precedentemente, utilizziamo il punteggio Metacritic e quello assegnato dagli utenti per scoprire quale casa editrice ha pubblicato i videogiochi con i voti più alti e bassi.
+
+```{r include=FALSE}
+Punti_per_Editore = VideoGames %>%
+  group_by(Publisher) %>%
+  summarise(sum_games = n()) %>%
+  filter(sum_games >= 200) %>%
+  arrange(desc(sum_games)) %>%
+  pull(Publisher)
+```
+```{r echo=FALSE}
+Punti_per_Editore_Metacritic = VideoGames %>%
+  filter(Publisher %in% Punti_per_Editore) %>%
+  filter(Publisher !="Unknown") %>%
+  ggplot(aes(x = Publisher, y = Score, fill = Publisher, color = Publisher)) +
+  geom_boxplot(alpha = 0.4) +
+  scale_y_continuous(breaks = seq(0,100,10)) +
+  labs(title = "Distribuzione del punteggio editori", x = "Top editori", y = "punteggio Metacritic") +
+  theme(legend.position = "none") +
+  coord_flip()
+#Punti_per_Editore_Metacritic
+```
+
+
+
+
+
+```{r echo=FALSE}
+Punti_per_Editore_Userscore = VideoGames %>%
+  filter(Publisher %in% Punti_per_Editore) %>%
+  filter(Publisher !="Unknown") %>%
+  ggplot(aes(x = Publisher, y = User_Score, fill = Publisher, color = Publisher)) +
+  geom_boxplot(alpha = 0.4) +
+  scale_y_continuous(breaks = seq(0,10,1)) +
+  labs(title = "Distribuzione del punteggio utenti", x = "Top editori", y = "punteggio degli utenti") +
+  theme(legend.position = "none") +
+  coord_flip()
+#Punti_per_Editore_Userscore
+```
+
+
+```{r echo=FALSE}
+grid.arrange(Punti_per_Editore_Metacritic, Punti_per_Editore_Userscore, nrow=2, ncol=1)
+```
+
+La casa editrice che ha pubblicato i videogiochi con i punteggi Metacritic più alti è Electronic Arts, mentre la casa editrice che ha pubblicato i videogiochi con i punteggi Metacritic più bassi è Konami Digital Entertainment.
+
+Gli utenti hanno assegnato ai videogiochi della casa editrice Nintendo i voti più alti, mentre i videogiochi della casa editrice Ubisoft ha ricevuto i punteggi degli utenti più bassi.
+
+## In conclusione
+
+* Il genere di videogiochi più popolare è Action, mentre la piattaforma su cui sono stati rilasciati più videogiochi è il PC.
+
+* L'editore che ha venduto il maggior numero di copie è Nintendo, con quasi un miliardo di unità vendute.
+
+* Il numero di videogiochi rilasciati negli anni è altalenante, dopo aver raggiunto il picco di videogiochi rilasciati in un anno, è seguito da una diminuizione del numero, per poi tornare a salire e di nuovo scendere.
+l'anno in quale sono stati rilasciati più videogiochi è stato il 2018.
+
+* I generi di videogiochi più venduti in USA ed Europa sono Action e Sports, in Giappone Action e Role-Playing.
+
+* I migliori, peggiori generi ed editori secondo Metacritic:
+
+  * I videogiochi con i punteggi Metacritic migliori appartengono al genere Role-Playing, mentre quelli con i punteggi più bassi al genere Simulation.
+  
+  * La casa editrice Electronic Arts ha pubblicato i videogiochi con i punteggi Metacritic più alti, mentre Konami Digital Entertainment ha pubblicato i videogiochi con i punteggi Metacritic più bassi.
+  
+* I migliori, peggiori generi ed editori secondo gli utenti:
+
+  * I videogiochi con i migliori punteggi assegnati dagli utenti appartengono al genere Role-Playing, mentre quelli con i punteggi più bassi al genere Adventure.
+  
+  * La casa editrice Nintendo ha pubblicato i videogiochi con i punteggi degli utenti più alti, mentre Ubisoft ha pubblicato i videogiochi con i punteggi degli utenti più bassi.
+
+# Fine
+
+
