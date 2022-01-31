@@ -18,7 +18,7 @@ VideoGames$Global_Sales[is.na(VideoGames$Global_Sales)] = 0
 VideoGames$Publisher[is.na(VideoGames$Publisher)] = "Unknown"
 
 
-# GENERI PIù POPOLARI
+# GENERI PIÃ¹ POPOLARI
 Top_Generi = VideoGames %>%
   mutate(Genre = Genre %>% fct_infreq() %>% fct_rev()) %>%
   group_by(Genre) %>%
@@ -30,13 +30,13 @@ Top_Generi %>%
   filter(Genre != "Miscellaneous") %>%
   ggplot(aes(x = Genre, y = count_Genres, fill = Genre)) +
   geom_col() +
-  labs(title = "Generi più popolari", x = "Generi", y = "Numero di videogiochi") +
+  labs(title = "Generi piÃ¹ popolari", x = "Generi", y = "Numero di videogiochi") +
   theme(legend.position = "none") +
   coord_flip()
 
 
 
-# PIATTAFORME PIù POPOLARI
+# PIATTAFORME PIÃ¹ POPOLARI
 Top_Piattaforme = VideoGames %>%
   mutate(Platform = Platform %>% fct_infreq() %>% fct_rev()) %>%
   group_by(Platform) %>%
@@ -48,7 +48,7 @@ Top_Piattaforme %>%
   filter(count_Platforms >= 100) %>%
   ggplot(aes(x = Platform, y = count_Platforms, fill = Platform)) +
   geom_col() +
-  labs(title = "Piattaforme più popolari", x = "Piattaforme", y = "Numero giochi rilasciati") +
+  labs(title = "Piattaforme piÃ¹ popolari", x = "Piattaforme", y = "Numero giochi rilasciati") +
   theme(legend.position = "none") + 
   coord_flip()
 
@@ -69,7 +69,7 @@ Top10_Editori %>%
   filter(TOT_Sales >= 50) %>%
   ggplot(aes(x = reorder(Publisher,TOT_Sales),y = TOT_Sales, fill = TOT_Sales)) +
   geom_col() +
-  labs(title = "Top 10 editori", x = "Editori", y = "videogiochi venduti in milioni di unità") +
+  labs(title = "Top 10 editori", x = "Editori", y = "videogiochi venduti in milioni di unitÃ ") +
   theme(legend.position = "none") +
   coord_flip()
 
@@ -162,7 +162,7 @@ Punti_per_Genere = VideoGames %>%
   summarise(sum_games = n()) %>%
   filter(sum_games >= 300) %>%
   arrange(desc(sum_games)) %>%
-  pull(Genre) # trasforma colonna in vettore
+  pull(Genre) 
 
 
 Punti_Per_Genere_Metacritic = VideoGames %>%
